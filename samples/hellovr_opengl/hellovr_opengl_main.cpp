@@ -200,7 +200,7 @@ private: // OpenGL bookkeeping
 	FramebufferDesc leftEyeDesc;
 	FramebufferDesc rightEyeDesc;
 
-	bool CreateFrameBuffer( int nWidth, int nHeight, FramebufferDesc &framebufferDesc );
+	bool CreateFrameBuffer( int nWidth, int nHeight, FramebufferDesc &framebufferDesc, GLuint resolveId);
 	
 	uint32_t m_nRenderWidth;
 	uint32_t m_nRenderHeight;
@@ -1238,7 +1238,7 @@ void CMainApplication::SetupCameras()
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-bool CMainApplication::CreateFrameBuffer( int nWidth, int nHeight, FramebufferDesc &framebufferDesc )
+bool CMainApplication::CreateFrameBuffer( int nWidth, int nHeight, FramebufferDesc &framebufferDesc , GLuint resolveId)
 {
 	glGenFramebuffers(1, &framebufferDesc.m_nRenderFramebufferId );
 	glBindFramebuffer(GL_FRAMEBUFFER, framebufferDesc.m_nRenderFramebufferId);
@@ -1256,7 +1256,7 @@ bool CMainApplication::CreateFrameBuffer( int nWidth, int nHeight, FramebufferDe
 	glGenFramebuffers(1, &framebufferDesc.m_nResolveFramebufferId );
 	glBindFramebuffer(GL_FRAMEBUFFER, framebufferDesc.m_nResolveFramebufferId);
 
-	glGenTextures(1, &framebufferDesc.m_nResolveTextureId );
+	framebufferDesc.m_nResolveTextureId = resolveId;
 	glBindTexture(GL_TEXTURE_2D, framebufferDesc.m_nResolveTextureId );
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
@@ -1286,8 +1286,14 @@ bool CMainApplication::SetupStereoRenderTargets()
 
 	m_pHMD->GetRecommendedRenderTargetSize( &m_nRenderWidth, &m_nRenderHeight );
 
-	CreateFrameBuffer( m_nRenderWidth, m_nRenderHeight, leftEyeDesc );
-	CreateFrameBuffer( m_nRenderWidth, m_nRenderHeight, rightEyeDesc );
+	GLuint rRId, rLId;
+	glGenTextures(1, &rLId);
+	glGenTextures(1, &rRId);
+
+	// Uncomment to avoid texture Submit() bug
+	//glGenTextures(1, &rRId);
+	CreateFrameBuffer( m_nRenderWidth, m_nRenderHeight, leftEyeDesc, rLId );
+	CreateFrameBuffer( m_nRenderWidth, m_nRenderHeight, rightEyeDesc, rRId );
 	
 	return true;
 }
